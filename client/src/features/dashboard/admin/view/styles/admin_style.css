@@ -1,0 +1,66 @@
+.admin-container {
+    max-width: 800px;
+    margin: 0px auto;
+    padding: 30px;
+    height: fit-content;
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: auto;
+    min-height: 600px;
+    gap: 20px;
+    background-color: #fff;
+    transition: 0.3s ease-in-out;
+    animation: popIn 0.3s ease-in-out;
+}
+
+.add:hover , .add-card:hover {
+    transform: scale(1.05);
+    transition: 0.6s ease-in-out;
+    cursor: pointer;
+}
+
+.form-coniatner{
+    animation: popIn 0.3s ease-in-out;
+}
+.all-class-body{
+  max-height: 500px;
+  overflow-y: auto;
+  background-color: transparent;
+  padding-right: 8px; /* avoids hiding scrollbar under content */
+}
+
+/* Scrollbar styling (WebKit browsers: Chrome, Edge, Safari) */
+.all-class-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.all-class-body::-webkit-scrollbar-thumb {
+  background-color: var(--bs-secondary); /* Bootstrap's secondary color */
+  border-radius: 10px;
+}
+
+.all-class-body::-webkit-scrollbar-thumb:hover {
+  background-color: #6c757d; /* slightly darker on hover */
+}
+
+.all-class-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* For Firefox */
+.all-class-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bs-secondary) transparent;
+}
+
+.card button {
+  transition: all 0.2s ease;
+}
+
+.card button:hover {
+  transform: translateY(-1px);
+}
+.text-muted {
+  font-style: italic;
+}

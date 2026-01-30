@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onefile --noconsole --add-data "../client/dist;client/dist" --add-data ".env;."  --icon=vite.ico app_runner.py

@@ -1,0 +1,4 @@
+__pycache__/
+server/venv
+server/alembic
+server/alemic.ini

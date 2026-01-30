@@ -1,0 +1,191 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  padding: 0px;
+  box-sizing: border-box;
+  min-height: 100vh;
+  background-color: #f0f0f0 !important
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+
+
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+
+  a:hover {
+    color: #747bff;
+  }
+
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+
+.error-text {
+  display: block;
+  font-size: 0.85rem;
+  color: #dc3545;
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-5px);
+  transition: all 0.3s ease;
+}
+
+.error-text.show {
+  opacity: 1;
+  max-height: 50px;
+  transform: translateY(0);
+}
+
+.default-page {
+  height: 100vh !important;
+}
+
+
+
+/* Overlay for background dim */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* dim background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* Popup container */
+.popup-menu {
+    background-color: #fff;
+    padding: 25px 30px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    animation: popupFade 0.3s ease-out;
+}
+
+/* Title */
+.popup-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Message text */
+.popup-message {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 25px;
+}
+
+/* Buttons */
+.popup-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.popup-buttons .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.popup-buttons .btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Popup animation */
+@keyframes popupFade {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+
+/* For modern browsers */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* Transparent scrollbar track */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(var(--bs-secondary-rgb), 0.6); /* Bootstrap secondary color */
+  border-radius: 10px;
+  border: 2px solid transparent; /* Optional: gives some spacing effect */
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--bs-secondary-rgb), 0.9); /* Darker on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--bs-secondary-rgb), 0.6) transparent;
+}
