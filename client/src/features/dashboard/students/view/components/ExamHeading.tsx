@@ -11,7 +11,7 @@ const ExamHeading = ({className, teacherName}:examHeadingParams) => {
       <div className="row align-items-center">
         {/* Heading Title */}
         <div className="col-auto">
-          <h3 className="mb-0 text-uppercase">{className ?? "request failed"} Class</h3>
+          <h3 className="mb-0">{className ?? "request failed"} Class</h3>
         </div>
 
         {/* Text Field */}

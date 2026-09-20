@@ -2,8 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { Outlet, Link } from "react-router-dom";
+import { ArrowLeft, RotateCw } from "lucide-react";
 import { useCurrentUserStore } from "../../utils/hooks/use_current_user";
 import HandleLogout from "../viewModel/handle_logout";
+import Brand from "./Brand";
+
+function initialsOf(fullName?: string) {
+  return (fullName ?? "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
 
 export default function NavbarLayout() {
   const { user } = useCurrentUserStore();
@@ -27,30 +38,32 @@ export default function NavbarLayout() {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-white shadow-sm border-bottom">
-        <div className="container-fluid">
+      <nav className="cbx-nav navbar navbar-expand-lg">
+        <div className="container-fluid py-1">
 
-          {/* Back Button */}
-          {canGoBack && (
+          <div className="d-flex align-items-center gap-1">
+            {canGoBack && (
+              <button
+                onClick={handleBack}
+                className="btn btn-ghost btn-sm d-flex align-items-center gap-1"
+              >
+                <ArrowLeft size={15} /> Back
+              </button>
+            )}
+
             <button
-              onClick={handleBack}
-              className="btn btn-outline-secondary me-2"
+              onClick={handleReload}
+              className="btn btn-ghost btn-sm d-flex align-items-center"
+              aria-label="Reload page"
+              title="Reload page"
             >
-              ← Back
+              <RotateCw size={15} />
             </button>
-          )}
-
-          {/* Reload Button */}
-          <button
-            onClick={handleReload}
-            className="btn btn-outline-secondary me-2"
-          >
-            ⟳ Reload
-          </button>
+          </div>
 
           {/* Brand */}
-          <Link className="navbar-brand fw-bold text-primary" to="/">
-            GENE-XX
+          <Link className="navbar-brand" to="/" aria-label="CBX home">
+            <Brand />
           </Link>
 
           {/* Mobile Toggle */}
@@ -72,18 +85,18 @@ export default function NavbarLayout() {
               {/* Add nav items here */}
             </ul>
 
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-2">
               {user && (
-                <span className="text-dark small bg-light px-3 py-1 rounded-pill border">
-                  <b>{user.role === "admin" && `Admin: `}</b>
-                  {user.fullName}
+                <span className="user-chip">
+                  <span className="user-chip-avatar" aria-hidden="true">{initialsOf(user.fullName)}</span>
+                  <span>
+                    {user.role === "admin" && <span className="user-chip-role">Admin · </span>}
+                    {user.fullName}
+                  </span>
                 </span>
               )}
-              <button
-                onClick={HandleLogout}
-                className="btn btn-outline-danger btn-sm"
-              >
-                Logout
+              <button onClick={HandleLogout} className="btn btn-ghost-danger btn-sm">
+                Log out
               </button>
             </div>
           </div>

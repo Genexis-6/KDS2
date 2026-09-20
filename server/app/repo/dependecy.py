@@ -14,7 +14,7 @@ class DBSessionManager:
     def __init__(self, host: str):
         self.__engine = create_async_engine(url=host)
         self.__session_manager = async_sessionmaker(
-            bind=self.__engine, autoflush=True, autocommit = False
+            bind=self.__engine, autoflush=True, autocommit=False, expire_on_commit=False
         )
         
     async def start(self):

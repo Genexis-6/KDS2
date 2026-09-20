@@ -42,9 +42,8 @@ export default function ChangePasswordForm({
 
   return (
     <div
-      className="modal fade show d-block"
+      className="modal fade show d-block glass-overlay"
       tabIndex={-1}
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">

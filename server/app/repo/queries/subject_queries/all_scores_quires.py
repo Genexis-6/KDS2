@@ -6,6 +6,7 @@ from uuid import UUID
 from datetime import datetime
 from app.repo.schemas.subject_schemas.subject_score_schemas import AddScoreSchemas
 from app.repo.queries.subject_queries.filter_question_queries import FilterQuestionQueries
+from app.utils.helpers.answer_checker import is_correct_answer
 
 class AllScoresQueries:
     def __init__(self, session):
@@ -108,7 +109,6 @@ class AllScoresQueries:
             return {"deleted": False, "message": f"Error dropping scores: {str(e)}", "count": 0}
 
     async def process_score(self, submission: SubmittedQuestions[SubmittedQ]):
-        # ✅ Prevent duplicate score entry
         existing = await self.check_score_exist(
             student_id=submission.studentId,
             subject_id=submission.subjectId
@@ -121,9 +121,9 @@ class AllScoresQueries:
         # ✅ Get filter settings for this subject
         filter_settings = await self.filter_query.get_question_format(submission.subjectId)
         
-        # Get all questions to check actual count
-        all_questions = await self.qa_query.get_only_id_and_answer(subject_id=submission.subjectId)
-        actual_total_questions = len(all_questions)
+        # Get the answer key (answer + option texts) for every question
+        answer_key = await self.qa_query.get_answer_key(subject_id=submission.subjectId)
+        actual_total_questions = len(answer_key)
         
         # ✅ Determine scoring parameters based on filter existence
         if filter_settings:
@@ -139,20 +139,26 @@ class AllScoresQueries:
             
             print(f"No filter settings found. Using defaults: 1 point per question, {actual_total_questions} total questions")
         
+        # One answer per question (the last one wins), so a tampered request
+        # can't repeat a correct question to inflate the score.
+        submitted_by_id = {str(ans.id): ans.answer for ans in submission.answers}
+
         # Validate: Ensure we don't have more submitted answers than expected
-        total_submitted = len(submission.answers)
+        total_submitted = len(submitted_by_id)
         
         if total_submitted > total_questions_for_scoring:
             print(f"Warning: Submitted {total_submitted} answers, but only {total_questions_for_scoring} expected. Using submitted count.")
             total_questions_for_scoring = total_submitted
         
-        # ✅ Create correct answer map
-        correct_answer_map = {str(q.id): q.answer for q in all_questions}
-
-        # ✅ Count correct answers
+        # ✅ Count correct answers. The exam UI submits the option letter ("A".."D")
+        # while banks may store either the letter or the option text as the answer;
+        # is_correct_answer understands both.
+        key_by_id = {str(q.id): q for q in answer_key}
         correct_answers = sum(
-            1 for ans in submission.answers
-            if str(ans.id) in correct_answer_map and ans.answer.lower() == correct_answer_map[str(ans.id)].lower()
+            1
+            for question_id, chosen in submitted_by_id.items()
+            if question_id in key_by_id
+            and is_correct_answer(chosen, key_by_id[question_id].answer, key_by_id[question_id].options)
         )
 
         # ✅ Calculate scores

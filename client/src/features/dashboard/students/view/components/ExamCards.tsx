@@ -1,4 +1,4 @@
-import examIcon from "../../../../../assets/images/exams.svg"
+import { BookOpenCheck } from "lucide-react"
 import type { SubjectModel } from "../../../../../common/model/classModels/subject_model"
 import { useSelectedExam } from "../../../../../utils/hooks/use_selected_exam"
 
@@ -17,7 +17,7 @@ export default function ExamCard({
 
     }}>
         <div className="image-container">
-            <img src={examIcon} alt="" />
+            <BookOpenCheck size={40} strokeWidth={1.4} aria-hidden="true" />
         </div>
         <div className="description">
             <h3>

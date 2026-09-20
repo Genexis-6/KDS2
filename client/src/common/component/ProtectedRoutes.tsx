@@ -9,7 +9,7 @@ export default function ProtectedRoute() {
   // You can show a spinner while checking authentication
   if (isChecking) {
     return (
-      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+      <div className="d-flex justify-content-center align-items-center vh-100">
         <div className="spinner-border text-primary" role="status" />
       </div>
     );

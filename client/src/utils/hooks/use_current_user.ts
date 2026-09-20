@@ -39,7 +39,7 @@ export const useCurrentUserStore = create<useCurrentUserParam>((set) => ({
     }
 
     if (!accessToken) {
-      console.warn("No access token available — user not authenticated");
+      console.warn("No access token available -- user not authenticated");
       set({ user: null, userType: null });
       return;
     }

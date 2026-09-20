@@ -45,6 +45,11 @@ export class HandleFormSubmission {
             setError("password", {
                 message: res.message
             })
+        } else if (res.statusCode === 409) {
+            // Student already has an active session elsewhere (1 student = 1 session).
+            setError("identifier", {
+                message: res.message || "This account already has an active session."
+            })
         }
         else if (res.statusCode === 200) {
             setToken(res.data.accessToken);

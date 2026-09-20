@@ -1,6 +1,20 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
-import { Search, Trash2 } from "lucide-react";
+import { useEffect, useState, useMemo, type CSSProperties } from "react";
+import {
+  Search,
+  Trash2,
+  Pencil,
+  ListChecks,
+  X,
+  Check,
+  RotateCw,
+  Timer,
+  SlidersHorizontal,
+  FilePlus,
+  FileSpreadsheet,
+  FileX,
+  type LucideIcon,
+} from "lucide-react";
 import { useNotificationStore } from "../../../../../utils/hooks/use_notification_store";
 import { useFullSubjectStore, type StudentSubInfo } from "../../../../../utils/hooks/use_subject_full_info";
 import AddTimerPopUp from "../components/AddTimerPopUp";
@@ -10,6 +24,82 @@ import { AllAdminOperation } from "../../viewModel/allAdminOperations";
 import { useGenerateRecordStore } from "../../../../../utils/hooks/use_generate_records";
 import Spinner from "../../../../../common/component/Spinner";
 import FormatQuestionPopup from "../components/formatQuestionPopup";
+
+type AdminQuestion = { id: string; question: string; a: string; b: string; c: string; d: string; answer: string };
+
+type ActionButtonProps = {
+  icon: LucideIcon;
+  label: string;
+  tooltip: string;
+  variant: "primary" | "success" | "secondary" | "danger";
+  onClick: () => void;
+};
+
+const ACCENTS: Record<ActionButtonProps["variant"], string> = {
+  primary: "var(--bs-primary, #0d6efd)",
+  success: "var(--bs-success, #198754)",
+  secondary: "var(--bs-secondary, #6c757d)",
+  danger: "var(--bs-danger, #dc3545)",
+};
+
+// Border stays invisible until hover, then takes the button's accent colour
+const ACTION_BUTTON_CSS = `
+.action-btn {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px;
+  background: #fff;
+  color: #495057;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+.action-btn:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.action-btn:active {
+  transform: scale(0.97);
+}
+.action-btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+.action-btn .action-btn-icon {
+  color: var(--accent);
+}
+.action-btn .action-btn-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+`;
+
+// Square button: large bold icon centered, title underneath, tooltip on hover
+function ActionButton({ icon: Icon, label, tooltip, variant, onClick }: ActionButtonProps) {
+  return (
+    <button
+      type="button"
+      className="action-btn"
+      style={{ "--accent": ACCENTS[variant] } as CSSProperties}
+      title={tooltip}
+      aria-label={label}
+      onClick={onClick}
+    >
+      <Icon className="action-btn-icon" size={34} strokeWidth={2.5} />
+      <span className="action-btn-label">{label}</span>
+    </button>
+  );
+}
 
 export default function ViewParticularSubject() {
   const { subjectId, subjectTitle } = useParams<{
@@ -31,6 +121,29 @@ export default function ViewParticularSubject() {
     score_per_qa: number;
   } | null>(null);
   const [deletingScore, setDeletingScore] = useState<string | null>(null); // Changed back to string for UUID
+
+  const [showQuestionsPanel, setShowQuestionsPanel] = useState(false);
+  const [adminQuestions, setAdminQuestions] = useState<AdminQuestion[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [questionDraft, setQuestionDraft] = useState<AdminQuestion | null>(null);
+
+  const loadAdminQuestions = async () => {
+    if (!subjectId) return;
+    setLoadingQuestions(true);
+    try {
+      const list = await AllAdminOperation.getAdminQuestions(subjectId);
+      setAdminQuestions(list);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  const toggleQuestionsPanel = async () => {
+    const next = !showQuestionsPanel;
+    setShowQuestionsPanel(next);
+    if (next) await loadAdminQuestions();
+  };
 
   // Fetch question format when subject data loads
   useEffect(() => {
@@ -70,15 +183,15 @@ export default function ViewParticularSubject() {
   // Function to handle score deletion
   const handleDeleteScore = async (studentId: string, studentName: string) => {
     if (!subjectId || !studentId) return;
-    
+
     setDeletingScore(studentId);
-    
+
     try {
       const success = await AllAdminOperation.deleteStudentScore(
         studentId, // Use the UUID string
         subjectId
       );
-      
+
       if (success) {
         showNotification(`Score deleted for ${studentName}`, "success");
         // Refresh the subject data
@@ -100,10 +213,10 @@ export default function ViewParticularSubject() {
       showNotification(`Student ID not found for ${student.studentName}`, "error");
       return;
     }
-    
+
     openPopup({
-      title: "Delete Student Score",
-      message: `Are you sure you want to delete the score for ${student.studentName}?`,
+      title: "Allow Retake",
+      message: `Clear ${student.studentName}'s score for this subject so they can retake the exam? This cannot be undone.`,
       onContinue: async () => {
         await handleDeleteScore(student.id!, student.studentName);
       },
@@ -124,109 +237,264 @@ export default function ViewParticularSubject() {
 
   return (
     <>
+      <style>{ACTION_BUTTON_CSS}</style>
       <div className="admin-container mt-5">
         <div className="container">
           <div className="card border-0 shadow-sm">
             {!generateState ? (
               <div className="card-body">
                 {/* Header Section */}
-                <div className="d-flex justify-content-between align-items-start mb-4">
-                  <div>
-                    <h3 className="mb-1 text-primary">{subjectTitle}</h3>
-                    <p className="text-muted mb-0">
-                      Students: <strong>{students?.length || 0}</strong> • Timer:{" "}
-                      {timer ? (
-                        <span className="badge bg-info text-dark">
-                          {timer.hr.toString().padStart(2, "0")}h{" "}
-                          {timer.mins.toString().padStart(2, "0")}m{" "}
-                          {timer.sec.toString().padStart(2, "0")}s
+                <div className="mb-3">
+                  <h3 className="mb-1 text-primary">{subjectTitle}</h3>
+                  <p className="text-muted mb-0">
+                    Students: <strong>{students?.length || 0}</strong> • Timer:{" "}
+                    {timer ? (
+                      <span className="badge bg-info text-dark">
+                        {timer.hr.toString().padStart(2, "0")}h{" "}
+                        {timer.mins.toString().padStart(2, "0")}m{" "}
+                        {timer.sec.toString().padStart(2, "0")}s
+                      </span>
+                    ) : (
+                      <span className="badge bg-secondary">Not set</span>
+                    )}
+                    • Questions:{" "}
+                    <strong>{question ? `Added` : "Not added"}</strong>
+                    {questionFormat && (
+                      <>
+                        {" "}
+                        • Format:{" "}
+                        <span className="badge bg-success">
+                          {questionFormat.number_of_qa}Q × {questionFormat.score_per_qa}pts
                         </span>
-                      ) : (
-                        <span className="badge bg-secondary">Not set</span>
-                      )}
-                      • Questions:{" "}
-                      <strong>{question ? `Added` : "Not added"}</strong>
-                      {questionFormat && (
-                        <>
-                          {" "}
-                          • Format:{" "}
-                          <span className="badge bg-success">
-                            {questionFormat.number_of_qa}Q × {questionFormat.score_per_qa}pts
-                          </span>
-                        </>
-                      )}
-                    </p>
-                  </div>
-
-                  {/* Buttons Section */}
-                  <div className="d-flex flex-column align-items-end">
-                    <button
-                      className="btn btn-outline-primary btn-sm mb-2"
-                      onClick={() => setShowTimerPopup(true)}
-                    >
-                      ⏱{!timer ? " Add Timer" : " Update Timer"}
-                    </button>
-                    {question && (
-                      <button
-                        className="btn btn-outline-success btn-sm mb-2"
-                        onClick={() => setShowFormatPopup(true)}
-                      >
-                        {questionFormat ? "📝 Update Format" : "📝 Set Format"}
-                      </button>
+                      </>
                     )}
-
-                    {!question && (
-                      <button
-                        className="btn btn-primary btn-sm mb-2"
-                        onClick={() => setShowAddQuestionPopup(true)}
-                      >
-                        ➕ Add Questions
-                      </button>
-                    )}
-                    {students.length !== 0 && (
-                      <button
-                        className="btn btn-outline-success btn-sm mb-2"
-                        onClick={() => {
-                          openPopup({
-                            title: "Generate excel record",
-                            message: "Do you wish to carry out with this operation!!!",
-                            onContinue: async () => {
-                              await sendStudentRecord(students, subjectTitle!);
-                            },
-                            onCancel: () => closePopup(),
-                          });
-                        }}
-                      >
-                        📄 Generate Excel Record
-                      </button>
-                    )}
-
-                    {question && (
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => {
-                          openPopup({
-                            title: "Delete uploaded question",
-                            message: "Do you want to delete the current current question!!",
-                            onContinue: async () => {
-                              var res = await AllAdminOperation.deleteQuestions({
-                                subjectId: subjectId!,
-                              });
-                              if (res) {
-                                if (students.length !== 0)
-                                  await sendStudentRecord(students, subjectTitle!);
-                                await getSubjectFullInfo(subjectId!, subjectTitle!);
-                              }
-                            },
-                            onCancel: () => closePopup(),
-                          });
-                        }}
-                      >
-                        ❌ Drop Question
-                      </button>
-                    )}
-                  </div>
+                  </p>
                 </div>
+
+                {/* Action buttons: one straight row, icon on top, title underneath */}
+                <div
+                  className="mb-4"
+                  style={{
+                    display: "grid",
+                    gridAutoFlow: "column",
+                    gridAutoColumns: "104px",
+                    gap: "16px",
+                    overflowX: "auto",
+                    padding: "6px 6px 12px",
+                  }}
+                >
+                  <ActionButton
+                    icon={Timer}
+                    label={!timer ? "Add Timer" : "Update Timer"}
+                    tooltip={timer ? "Change the exam duration for this subject" : "Set how long students have to finish this exam"}
+                    variant="primary"
+                    onClick={() => setShowTimerPopup(true)}
+                  />
+
+                  {question && (
+                    <ActionButton
+                      icon={SlidersHorizontal}
+                      label={questionFormat ? "Update Format" : "Set Format"}
+                      tooltip="Set the number of questions and points per question"
+                      variant="success"
+                      onClick={() => setShowFormatPopup(true)}
+                    />
+                  )}
+
+                  {question && (
+                    <ActionButton
+                      icon={ListChecks}
+                      label={showQuestionsPanel ? "Hide Questions" : "Manage Questions"}
+                      tooltip="View, edit or delete individual questions"
+                      variant="secondary"
+                      onClick={toggleQuestionsPanel}
+                    />
+                  )}
+
+                  {!question && (
+                    <ActionButton
+                      icon={FilePlus}
+                      label="Add Questions"
+                      tooltip="Upload questions for this subject"
+                      variant="primary"
+                      onClick={() => setShowAddQuestionPopup(true)}
+                    />
+                  )}
+
+                  {students.length !== 0 && (
+                    <ActionButton
+                      icon={FileSpreadsheet}
+                      label="Excel Record"
+                      tooltip="Download students' scores as an Excel file"
+                      variant="success"
+                      onClick={() => {
+                        openPopup({
+                          title: "Generate excel record",
+                          message: "Do you wish to carry out with this operation!!!",
+                          onContinue: async () => {
+                            await sendStudentRecord(students, subjectTitle!);
+                          },
+                          onCancel: () => closePopup(),
+                        });
+                      }}
+                    />
+                  )}
+
+                  {question && (
+                    <ActionButton
+                      icon={FileX}
+                      label="Drop Question"
+                      tooltip="Delete all uploaded questions for this subject"
+                      variant="danger"
+                      onClick={() => {
+                        openPopup({
+                          title: "Delete uploaded question",
+                          message: "Do you want to delete the current current question!!",
+                          onContinue: async () => {
+                            var res = await AllAdminOperation.deleteQuestions({
+                              subjectId: subjectId!,
+                            });
+                            if (res) {
+                              if (students.length !== 0)
+                                await sendStudentRecord(students, subjectTitle!);
+                              await getSubjectFullInfo(subjectId!, subjectTitle!);
+                            }
+                          },
+                          onCancel: () => closePopup(),
+                        });
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Question management panel */}
+                {showQuestionsPanel && (
+                  <div className="mb-4 p-3" style={{ border: "1px solid var(--cbx-line)", borderRadius: "var(--radius-md)", backgroundColor: "var(--cbx-white)" }}>
+                    <h5 className="mb-3">Questions ({adminQuestions.length})</h5>
+
+                    {loadingQuestions ? (
+                      <Spinner message="loading questions" />
+                    ) : adminQuestions.length === 0 ? (
+                      <p className="text-muted mb-0">No questions found for this subject.</p>
+                    ) : (
+                      <div style={{ maxHeight: "480px", overflowY: "auto" }}>
+                        {adminQuestions.map((q, idx) => {
+                          const isEditing = editingQuestionId === q.id;
+                          const draft = isEditing ? questionDraft! : q;
+                          return (
+                            <div key={q.id} className="p-2 mb-2" style={{ borderBottom: "1px solid var(--cbx-line)" }}>
+                              <div className="d-flex justify-content-between align-items-start gap-2">
+                                <div style={{ flexGrow: 1 }}>
+                                  <small className="text-muted">Q{idx + 1}</small>
+                                  {isEditing ? (
+                                    <textarea
+                                      className="form-control form-control-sm mb-2"
+                                      value={draft.question}
+                                      onChange={(e) => setQuestionDraft({ ...draft, question: e.target.value })}
+                                    />
+                                  ) : (
+                                    <p className="mb-2 fw-semibold">{q.question}</p>
+                                  )}
+
+                                  <div className="row g-2">
+                                    {(["a", "b", "c", "d"] as const).map((opt) => (
+                                      <div className="col-6" key={opt}>
+                                        {isEditing ? (
+                                          <input
+                                            className="form-control form-control-sm"
+                                            value={draft[opt]}
+                                            placeholder={`Option ${opt.toUpperCase()}`}
+                                            onChange={(e) => setQuestionDraft({ ...draft, [opt]: e.target.value })}
+                                          />
+                                        ) : (
+                                          <small className={q.answer.trim().toLowerCase() === q[opt].trim().toLowerCase() ? "fw-bold" : ""} style={q.answer.trim().toLowerCase() === q[opt].trim().toLowerCase() ? { color: "var(--cbx-mint-700)" } : {}}>
+                                            {opt.toUpperCase()}. {q[opt]}
+                                          </small>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {isEditing && (
+                                    <div className="mt-2">
+                                      <label className="form-label mb-1">Correct answer</label>
+                                      <input
+                                        className="form-control form-control-sm"
+                                        style={{ maxWidth: "220px" }}
+                                        value={draft.answer}
+                                        onChange={(e) => setQuestionDraft({ ...draft, answer: e.target.value })}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="d-flex flex-column gap-1">
+                                  {isEditing ? (
+                                    <>
+                                      <button
+                                        className="btn btn-sm btn-primary"
+                                        onClick={async () => {
+                                          if (!questionDraft) return;
+                                          const ok = await AllAdminOperation.editQuestion(questionDraft);
+                                          if (ok) {
+                                            setAdminQuestions((prev) => prev.map((item) => (item.id === q.id ? questionDraft : item)));
+                                          }
+                                          setEditingQuestionId(null);
+                                          setQuestionDraft(null);
+                                        }}
+                                      >
+                                        <Check size={14} />
+                                      </button>
+                                      <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        onClick={() => {
+                                          setEditingQuestionId(null);
+                                          setQuestionDraft(null);
+                                        }}
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button
+                                        className="btn btn-sm btn-outline-primary"
+                                        title="Edit question"
+                                        onClick={() => {
+                                          setEditingQuestionId(q.id);
+                                          setQuestionDraft(q);
+                                        }}
+                                      >
+                                        <Pencil size={14} />
+                                      </button>
+                                      <button
+                                        className="btn btn-sm btn-outline-danger"
+                                        title="Delete question"
+                                        onClick={() =>
+                                          openPopup({
+                                            title: "Delete Question",
+                                            message: "Remove this question permanently? This cannot be undone.",
+                                            onContinue: async () => {
+                                              const ok = await AllAdminOperation.deleteSingleQuestion({ questionId: q.id });
+                                              if (ok) setAdminQuestions((prev) => prev.filter((item) => item.id !== q.id));
+                                            },
+                                            onCancel: () => closePopup(),
+                                          })
+                                        }
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Search */}
                 <div className="mb-3 position-relative d-flex align-items-center">
@@ -286,15 +554,15 @@ export default function ViewParticularSubject() {
                             <td>
                               {student.score !== undefined && student.total !== undefined
                                 ? `${student.score}/${student.total}`
-                                : "—"}
+                                : "--"}
                             </td>
                             <td>
                               {student.score !== undefined && student.id && (
                                 <button
-                                  className="btn btn-sm btn-outline-danger"
+                                  className="btn btn-sm btn-outline-warning"
                                   onClick={() => confirmDeleteScore(student)}
                                   disabled={deletingScore === student.id}
-                                  title="Delete score for this student"
+                                  title="Allow this student to retake the exam"
                                   style={{
                                     minWidth: "90px",
                                     opacity: deletingScore === student.id ? 0.6 : 1,
@@ -307,12 +575,12 @@ export default function ViewParticularSubject() {
                                         role="status"
                                         aria-hidden="true"
                                       ></span>
-                                      Deleting...
+                                      Clearing...
                                     </>
                                   ) : (
                                     <>
-                                      <Trash2 size={14} className="me-1" />
-                                      Drop Score
+                                      <RotateCw size={14} className="me-1" />
+                                      Retake Exam
                                     </>
                                   )}
                                 </button>

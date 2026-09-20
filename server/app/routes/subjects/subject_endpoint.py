@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.repo.schemas.default_server_res import DefaultServerApiRes
 from app.repo import db_injection
 from app.repo.queries.subject_queries.all_subject_queries import AllSubjectQueries
-from app.repo.schemas.subject_schemas.add_new_subject import AddNewSubjectSchemas, SubjectById, SubjectFullInfo, SubjectInfoSchemas, ParticularSubjectSchemas
+from app.repo.schemas.subject_schemas.add_new_subject import AddNewSubjectSchemas, SubjectById, SubjectFullInfo, SubjectInfoSchemas, ParticularSubjectSchemas, UpdateSubjectSchemas
 from typing import Annotated, List
 from datetime import datetime
 from app.utils.enums.auth_enums import AuthEums
@@ -78,6 +78,40 @@ async def add_subject(db: db_injection, add: AddNewSubjectSchemas, current_user:
             message="An unexpected error occurred while creating the subject",
             data=None,
         )
+
+@subject_endpoint.put("/update_subject", response_model=DefaultServerApiRes[str])
+async def update_subject(db: db_injection, update: UpdateSubjectSchemas, current_user: Annotated[dict, Depends(verify_token)]):
+    sub_query = AllSubjectQueries(db)
+    result = await sub_query.update_subject(update)
+
+    if result == AuthEums.NOT_FOUND:
+        return JSONResponse(
+            content={"message": "subject not found"},
+            status_code=404
+        )
+    return DefaultServerApiRes(
+        statusCode=200,
+        message="Subject updated successfully",
+        data="Subject updated successfully",
+    )
+
+
+@subject_endpoint.delete("/delete_subject/{subject_id}", response_model=DefaultServerApiRes[bool])
+async def delete_subject(db: db_injection, subject_id: UUID, current_user: Annotated[dict, Depends(verify_token)]):
+    sub_query = AllSubjectQueries(db)
+    result = await sub_query.delete_subject(subject_id)
+
+    if result == AuthEums.NOT_FOUND:
+        return JSONResponse(
+            content={"message": "subject not found", "data": False},
+            status_code=404
+        )
+    return DefaultServerApiRes(
+        statusCode=200,
+        message="Subject deleted successfully",
+        data=True
+    )
+
 
 @subject_endpoint.post("/generate_record", response_model=DefaultServerApiRes[bool])
 async def generate_record(gen:StudentScoreRecord, current_user:Annotated[dict, Depends(verify_token)] ):

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { SubjectModel } from "../../common/model/classModels/subject_model";
-import type { StudentModels } from "../../common/model/studentModels/student_model";
 import { useIsAuthenticatedStore } from "./use_is_authenticated_store";
 import { useAuthTokenStore } from "./use_auth_token_store";
 import { DefaultRequestSetUp } from "../http/default_request_set_up";
@@ -13,7 +12,7 @@ export interface useViewClassInfoData {
   className: string;
   teacherName: string;
   subjects: SubjectModel[] | [];
-  students: StudentModels[] | [];
+  studentCount: number;
 }
 
 type useViewClassInfo = {

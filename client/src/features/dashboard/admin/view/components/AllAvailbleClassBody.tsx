@@ -86,6 +86,9 @@ export default function AllAvailableClass({
                   className={class_.className}
                   teacherName={class_.teacherName}
                   onView={() => navigate(`/admin/${AppUrl.build(AppUrl.viewParticularClass, { className: class_.className })}`)}
+                  onEdit={async ({ className: newName, teacherName: newTeacher }) => {
+                    await AllAdminOperation.updateThisClass({ id: class_.id, className: newName, teacherName: newTeacher })
+                  }}
                   onDelete={() =>
                     openPopup({
                       title: "Confirm Action",

@@ -22,16 +22,13 @@ export async function uploadStudentsExcel({ file, classId }: UploadExcelParams) 
     // Construct URL with query param for class_id
     const url = `${AllServerUrls.bulkRegisterStudents}?class_id=${classId}`;
 
-    // Use your DefaultRequestSetUp wrapper (or fetch)
-    const res = await DefaultRequestSetUp.post<FormData, void>({
+    const res = await DefaultRequestSetUp.post<FormData, { jobId: string }>({
       url,
       token: token!,
       data: formData,
     });
 
-    if (res.statusCode === 202) {
-      showNotification("Excel upload started successfully!", "success");
-    } else {
+    if (res.statusCode !== 202) {
       showNotification(res.message || "Excel upload failed", "error");
     }
 

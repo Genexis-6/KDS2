@@ -15,6 +15,13 @@ class AddNewSubjectSchemas(BaseModel):
     classId: UUID4
 
 
+class UpdateSubjectSchemas(BaseModel):
+    id: UUID4
+    title: Optional[str] = None
+    author: Optional[str] = None
+    enable: Optional[bool] = None
+
+
 class ParticularSubjectSchemas(BaseModel):
     id: UUID4
     title: str

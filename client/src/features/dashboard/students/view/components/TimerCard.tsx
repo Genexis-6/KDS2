@@ -27,7 +27,7 @@ export default function TimerCard() {
 
   return (
     <div className="col-12">
-      <div className="timer-component text-white bg-primary text-center p-3 rounded shadow-sm">
+      <div className={`timer-component ${remainingTime > 0 && remainingTime <= 60 ? "timer-warning" : ""}`}>
         <h4 className="mb-0">
           Time Remaining:{" "}
           <span className="fw-bold">

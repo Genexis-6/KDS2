@@ -163,11 +163,11 @@ export default function FormatQuestionPopup({
 
   return (
     <div
-      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center glass-overlay"
       style={{ zIndex: 1050 }}
     >
-      <div className="card shadow-lg" style={{ width: "500px", maxWidth: "95vw" }}>
-        <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <div className="card glass-panel" style={{ width: "500px", maxWidth: "95vw" }}>
+        <div className="card-header modal-head">
           <div>
             <h5 className="mb-0">
               {existingFormat ? "Update Question Format" : "Set Question Format"}
@@ -185,7 +185,7 @@ export default function FormatQuestionPopup({
           </div>
           <button
             type="button"
-            className="btn-close btn-close-white"
+            className="btn-close"
             aria-label="Close"
             onClick={() => {
               reset();

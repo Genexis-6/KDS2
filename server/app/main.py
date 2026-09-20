@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.repo import db_session_manager
 from app.routes import register_all_routes
 from app.repo.queries.admin.all_admin_queries import AllAdminQueries
+from app.utils.executor import upload_executor
 
 
 @contextlib.asynccontextmanager
@@ -20,10 +21,11 @@ async def life_span(app):
         await admin.add_admin()
         
     yield
+    upload_executor.shutdown(wait=True)
     await db_session_manager.end()
 
 
-app = FastAPI(title="KDS", lifespan=life_span)
+app = FastAPI(title="CBX", lifespan=life_span)
 
 all_origins = ["http://localhost:5173"]
 

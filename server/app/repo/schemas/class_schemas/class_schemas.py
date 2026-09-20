@@ -19,4 +19,4 @@ class ClassFullDetails(BaseModel):
     className:str
     teacherName:str
     subjects:Optional[List[ParticularSubjectSchemas]] = None
-    students:Optional[List[StudentInfoSchemas]] = None
+    studentCount: int = 0

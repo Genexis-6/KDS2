@@ -51,7 +51,7 @@ export default function ExamPreParation() {
     <div className="exam-container mt-4">
       {/* Header Section */}
       <div className="w-100 text-center mb-4 border-bottom pb-3">
-        <h2 className="mb-2 text-uppercase">Exam Preparation</h2>
+        <h2 className="mb-2">Exam Preparation</h2>
         <p className="text-muted mb-1">
           <strong>Teacher:</strong> {selectedExam?.author}
         </p>
@@ -75,7 +75,7 @@ export default function ExamPreParation() {
 
       {/* Exam Guidelines */}
       <div className="w-100 mb-4">
-        <h5 className="fw-bold text-uppercase">Exam Guidelines</h5>
+        <h5 className="fw-semibold">Exam Guidelines</h5>
         <ul className="list-group list-group-flush">
           <li className="list-group-item bg-transparent border-0">
             Once you start the exam, you cannot go back.

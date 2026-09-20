@@ -1,4 +1,12 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, UUID4, field_validator
+from typing import Optional
+
+
+class UpdateClassSchemas(BaseModel):
+    id: UUID4
+    className: Optional[str] = None
+    teacherName: Optional[str] = None
+
 
 class AddNewClassSchemas(BaseModel):
     className: str

@@ -1,5 +1,5 @@
 from typing import Optional
-from app.repo.schemas.subject_schemas.add_new_subject import  AddNewSubjectSchemas, ParticularSubjectSchemas, StudentSubInfo, SubjectById, SubjectFullInfo, SubjectInfoSchemas, TotalQuestions
+from app.repo.schemas.subject_schemas.add_new_subject import  AddNewSubjectSchemas, ParticularSubjectSchemas, StudentSubInfo, SubjectById, SubjectFullInfo, SubjectInfoSchemas, TotalQuestions, UpdateSubjectSchemas
 from app.utils.enums.auth_enums import AuthEums
 from app.repo.queries.class_room_queries.class_queries import ClassQueries
 from app.repo.models.subject.student_scores_model import StudentScoreModel
@@ -71,6 +71,34 @@ class AllSubjectQueries:
             await self.session.commit()
             return AuthEums.CREATED
         return AuthEums.EXISTS
+
+    async def get_subject_by_id(self, subject_id: UUID):
+        res = await self.session.execute(select(SubJectModel).where(SubJectModel.id == subject_id))
+        return res.scalar_one_or_none()
+
+    async def update_subject(self, update: UpdateSubjectSchemas):
+        subject = await self.get_subject_by_id(update.id)
+        if subject is None:
+            return AuthEums.NOT_FOUND
+
+        if update.title is not None:
+            subject.title = update.title
+        if update.author is not None:
+            subject.author = update.author
+        if update.enable is not None:
+            subject.enable = update.enable
+
+        await self.session.commit()
+        return AuthEums.OK
+
+    async def delete_subject(self, subject_id: UUID):
+        subject = await self.get_subject_by_id(subject_id)
+        if subject is None:
+            return AuthEums.NOT_FOUND
+
+        await self.session.delete(subject)
+        await self.session.commit()
+        return AuthEums.OK
     
     
     async def get_subject_full_info(

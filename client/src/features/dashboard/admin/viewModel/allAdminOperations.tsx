@@ -85,6 +85,104 @@ export class AllAdminOperation {
   }
 
 
+  static async updateThisClass({ id, className, teacherName }: { id: string; className?: string; teacherName?: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.put<{ id: string; className?: string; teacherName?: string }, void>({
+      url: AllServerUrls.updateClass,
+      token: token!,
+      data: { id, className, teacherName },
+    })
+    if (res.statusCode === 200) {
+      await useAllClassStore.getState().getLatestUpdate()
+    }
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async updateSubject({ id, title, author, enable }: { id: string; title?: string; author?: string; enable?: boolean }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.put<{ id: string; title?: string; author?: string; enable?: boolean }, string>({
+      url: AllServerUrls.updateSubject,
+      token: token!,
+      data: { id, title, author, enable },
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async deleteSubject({ subjectId }: { subjectId: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.delete<void, boolean>({
+      url: `${AllServerUrls.deleteSubject}/${subjectId}`,
+      token: token!,
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async updateStudent({ id, fullName, identifier, classId }: { id: string; fullName?: string; identifier?: string; classId?: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.put<{ id: string; fullName?: string; identifier?: string; classId?: string }, boolean>({
+      url: AllServerUrls.updateStudent,
+      token: token!,
+      data: { id, fullName, identifier, classId },
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async deleteStudent({ studentId }: { studentId: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.delete<void, boolean>({
+      url: `${AllServerUrls.deleteStudent}/${studentId}`,
+      token: token!,
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async clearStudentSession({ studentId }: { studentId: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.delete<void, boolean>({
+      url: `${AllServerUrls.clearStudentSession}/${studentId}`,
+      token: token!,
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async getAdminQuestions(subjectId: string): Promise<Array<{ id: string; question: string; a: string; b: string; c: string; d: string; answer: string }>> {
+    const { token } = useAuthTokenStore.getState();
+    const res = await DefaultRequestSetUp.get<Array<{ id: string; question: string; a: string; b: string; c: string; d: string; answer: string }>>({
+      url: `${AllServerUrls.getAdminQuestions}/${subjectId}`,
+      token: token!,
+    });
+    if (res.statusCode === 200 && res.data) return res.data;
+    return [];
+  }
+
+  static async editQuestion(payload: { id: string; question?: string; a?: string; b?: string; c?: string; d?: string; answer?: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.put<typeof payload, boolean>({
+      url: AllServerUrls.editQuestion,
+      token: token!,
+      data: payload,
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+  static async deleteSingleQuestion({ questionId }: { questionId: string }) {
+    const { token } = useAuthTokenStore.getState()
+    const res = await DefaultRequestSetUp.delete<void, boolean>({
+      url: `${AllServerUrls.deleteSingleQuestion}/${questionId}`,
+      token: token!,
+    })
+    useNotificationStore.getState().showNotification(res.message, res.statusCode === 200 ? "success" : "error")
+    return res.statusCode === 200
+  }
+
+
   static async addNewSubject({
     dt,
     setError,
@@ -203,18 +301,20 @@ export class AllAdminOperation {
 
 
       const url = `${AllServerUrls.uploadQuestion}?subject_id=${dt.subject_id}`;
-      const res = await DefaultRequestSetUp.post<FormData, void>({
+      // The server accepts the file and answers 202 with a job id right away;
+      // parsing/saving continue in the background and the upload modal follows
+      // them live over a WebSocket (see UploadStudentQuestion).
+      const res = await DefaultRequestSetUp.post<FormData, { jobId: string }>({
         url,
         data: formData,
         token: token!,
       });
 
-      if (res.statusCode !== 200) {
+      if (res.statusCode !== 202 || !res.data?.jobId) {
         setError("file", { message: res.message || "Upload failed" });
         return;
       }
 
-      useNotificationStore.getState().showNotification(res.message, "success")
       return res;
     } catch (err: any) {
       useNotificationStore.getState().showNotification("an erro occured while uploading", "error")

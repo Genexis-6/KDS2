@@ -1,9 +1,19 @@
-from typing import List, TypeVar, Generic
+from typing import List, Optional, TypeVar, Generic
 from pydantic import UUID4, BaseModel
 
 
 T = TypeVar('T')
 
+
+
+class AdminQuestionSchemas(BaseModel):
+    id: UUID4
+    question: str
+    a: str
+    b: str
+    c: str
+    d: str
+    answer: str
 
 
 class GetQuestionSchemas(BaseModel):
@@ -14,6 +24,16 @@ class GetQuestionSchemas(BaseModel):
     c:str
     d:str
     
+
+class EditQuestionSchemas(BaseModel):
+    id: UUID4
+    question: Optional[str] = None
+    a: Optional[str] = None
+    b: Optional[str] = None
+    c: Optional[str] = None
+    d: Optional[str] = None
+    answer: Optional[str] = None
+
 
 class SubmittedQ(BaseModel):
     id:UUID4

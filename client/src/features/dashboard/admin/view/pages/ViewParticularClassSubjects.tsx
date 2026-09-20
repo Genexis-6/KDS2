@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useViewClassInfoStore } from "../../../../../utils/hooks/use_view_class_info";
 import { useNavigationStore } from "../../../../../utils/hooks/use_navigation_store";
 import { AppUrl } from "../../../../../common/routes/app_urls";
+import { AllAdminOperation } from "../../viewModel/allAdminOperations";
+import { usePopupStore } from "../../../../../utils/hooks/use_pop_up_menu";
 
 export default function ViewParticularClassSubjects() {
   const { viewClassData, getClassInfo } = useViewClassInfoStore();
   const { className } = useParams();
   const {navigate} = useNavigationStore()
+  const { openPopup, closePopup } = usePopupStore()
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -41,7 +44,26 @@ export default function ViewParticularClassSubjects() {
             <div className="all-class-body">
               {filteredSubjects && filteredSubjects.length > 0 ? (
                 filteredSubjects.map((sub, key) => (
-                  <SubjectTile key={key} sub={sub} onView={()=>navigate(`/admin/${AppUrl.build(AppUrl.viewParticularSubject, { subjectId: sub.id, subjectTitle: sub.title })}`)}/>
+                  <SubjectTile
+                    key={key}
+                    sub={sub}
+                    onView={()=>navigate(`/admin/${AppUrl.build(AppUrl.viewParticularSubject, { subjectId: sub.id, subjectTitle: sub.title })}`)}
+                    onEdit={async ({ title, author }) => {
+                      const ok = await AllAdminOperation.updateSubject({ id: sub.id, title, author })
+                      if (ok && className) await getClassInfo(className)
+                    }}
+                    onDelete={() =>
+                      openPopup({
+                        title: "Confirm Action",
+                        message: "Do you want to continue with this delete operation?",
+                        onContinue: async () => {
+                          const ok = await AllAdminOperation.deleteSubject({ subjectId: sub.id })
+                          if (ok && className) await getClassInfo(className)
+                        },
+                        onCancel: () => closePopup(),
+                      })
+                    }
+                  />
                 ))
               ) : (
                 <p>No subject found{searchTerm ? ` for "${searchTerm}"` : ""}.</p>

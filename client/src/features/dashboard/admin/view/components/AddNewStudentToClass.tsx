@@ -1,9 +1,10 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AllAdminOperation } from "../../viewModel/allAdminOperations";
 import { useViewClassInfoStore } from "../../../../../utils/hooks/use_view_class_info";
 import { uploadStudentsExcel } from "../../viewModel/uploadStudentExcel";
-import { useNotificationStore } from "../../../../../utils/hooks/use_notification_store";
+import { useBulkUploadProgress } from "../../../../../utils/hooks/use_bulk_upload_progress";
+import UploadProgressBar from "./UploadProgressBar";
 
 export interface AddNewStudentForm {
     full_name: string;
@@ -32,6 +33,9 @@ export default function AddNewStudentToClass({
     onSave,
 }: AddNewStudentToClassProps) {
     const [isExcelMode, setIsExcelMode] = useState(false);
+    const [uploadJobId, setUploadJobId] = useState<string | null>(null);
+    const { status: uploadStatus, percent: uploadPercent } = useBulkUploadProgress(uploadJobId);
+    const uploadPercentSafe = uploadStatus ? Math.max(uploadPercent, uploadStatus.status === "pending" || uploadStatus.status === "parsing" ? 5 : uploadPercent) : 0;
      const { getClassInfo } = useViewClassInfoStore();
     const {
         register,
@@ -72,33 +76,41 @@ export default function AddNewStudentToClass({
         if (data.file && data.file.length > 0) {
           const file = data.file[0];
           try {
-            await uploadStudentsExcel({ file, classId });
-            resetExcel(); // clear form
-            useNotificationStore.getState().showNotification("Excel upload started in background", "success");
-            reset()
-            await getClassInfo(className)
-            onClose()
+            const res = await uploadStudentsExcel({ file, classId });
+            if (res.statusCode === 202 && res.data?.jobId) {
+              setUploadJobId(res.data.jobId);
+              resetExcel();
+            }
           } catch (err) {
             console.error(err);
           }
         }
       };
+
+    // Once the background job finishes, refresh the class's student list.
+    // We deliberately don't auto-close the popup here -- the admin sees the
+    // "done" state with a summary and closes it themselves.
+    useEffect(() => {
+        if (uploadStatus?.status === "done") {
+            getClassInfo(className);
+        }
+    }, [uploadStatus?.status]);
       
 
     return (
         <div
-            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
+            className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center glass-overlay"
             style={{ zIndex: 1050 }}
         >
-            <div className="card shadow-lg" style={{ width: "450px" }}>
+            <div className="card glass-panel" style={{ width: "450px" }}>
                 {/* Header */}
-                <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <div className="card-header modal-head">
                     <h5 className="mb-0">
                         {isExcelMode ? "Upload Excel File" : "Add Student to Class"}
                     </h5>
                     <button
                         type="button"
-                        className="btn-close btn-close-white"
+                        className="btn-close"
                         onClick={onClose}
                     ></button>
                 </div>
@@ -217,51 +229,73 @@ export default function AddNewStudentToClass({
                 {/* Excel Upload Form */}
                 {isExcelMode && (
                     <form onSubmit={handleExcelSubmit(onUpload)}>
-                        <div className="card-body">
-                            <div className="mb-3">
-                                <label className="form-label">Select Excel File (.xlsx)</label>
-                                <input
-                                    readOnly={isSubmitting}
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    {...registerExcel("file", {
-                                        required: "Please select an Excel file",
-                                    })}
-                                    className={`form-control ${excelErrors.file ? "is-invalid" : ""
-                                        }`}
-                                />
-                                {excelErrors.file && (
-                                    <div className="invalid-feedback">
-                                        {excelErrors.file.message}
-                                    </div>
-                                )}
-                            </div>
+                        {!uploadJobId ? (
+                            <div className="card-body">
+                                <div className="mb-3">
+                                    <label className="form-label">Select Excel File (.xlsx)</label>
+                                    <input
+                                        readOnly={isSubmitting}
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        {...registerExcel("file", {
+                                            required: "Please select an Excel file",
+                                        })}
+                                        className={`form-control ${excelErrors.file ? "is-invalid" : ""
+                                            }`}
+                                    />
+                                    {excelErrors.file && (
+                                        <div className="invalid-feedback">
+                                            {excelErrors.file.message}
+                                        </div>
+                                    )}
+                                </div>
 
-                            {/* Class ID (readonly) */}
-                            <div className="mb-3">
-                                <label className="form-label">Class ID</label>
-                                <input
-                                    type="text"
-                                    {...registerExcel("class_id")}
-                                    value={classId}
-                                    readOnly
-                                    className="form-control bg-light"
-                                />
+                                {/* Class ID (readonly) */}
+                                <div className="mb-3">
+                                    <label className="form-label">Class ID</label>
+                                    <input
+                                        type="text"
+                                        {...registerExcel("class_id")}
+                                        value={classId}
+                                        readOnly
+                                        className="form-control bg-light"
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        ) : (
+                            <div className="card-body">
+                                <UploadProgressBar status={uploadStatus} percent={uploadPercentSafe} noun="students" />
+                            </div>
+                        )}
 
                         {/* Footer */}
                         <div className="card-footer text-end">
-                            <button
-                                type="button"
-                                className="btn btn-secondary me-2"
-                                onClick={onClose}
-                            >
-                                Cancel
-                            </button>
-                            <button type="submit" className="btn btn-success">
-                                {isSubmitting ? "uploading..." : "Upload Excel"}
-                            </button>
+                            {!uploadJobId ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary me-2"
+                                        onClick={onClose}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="btn btn-success">
+                                        {isSubmitting ? "uploading..." : "Upload Excel"}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    disabled={uploadStatus?.status !== "done" && uploadStatus?.status !== "error"}
+                                    onClick={() => {
+                                        setUploadJobId(null);
+                                        onClose();
+                                    }}
+                                >
+                                    {uploadStatus?.status === "done" || uploadStatus?.status === "error" ? "Done" : "Please wait..."}
+                                </button>
+                            )}
                         </div>
                     </form>
                 )}

@@ -1,80 +1,128 @@
+/* ---- Timer: the one thing a student watches, so it gets the glass ---- */
 .timer-component {
-    background-color: #0d6efd;
-    color: #fff;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 12px 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 700px;
-    animation: popIn 0.4s ease-out;
-}
-
-.timer-component span {
-    font-size: 1.25rem;
-}
-
-@keyframes popIn {
-    0% {
-        opacity: 0;
-        transform: scale(0.8);
-    }
-}
-
-/* Container to align questions to right with vertical scroll */
-.all-questions-container {
-    padding: 20px;
-    width: 100%;
-    flex-wrap: wrap;
-    max-height: 300px; /* container height */
-    display: flex;
-    flex-direction: row; /* stack vertically */
-    overflow-y: auto; /* vertical scroll */
-    overflow-x: hidden; /* no horizontal scroll */
-    background-color: transparent;
+    max-width: 720px;
     margin: 0 auto;
-    align-items: center; /* center horizontally if needed */
-    gap: 10px; /* spacing between cards */
+    padding: 14px 24px;
+    text-align: center;
+    color: var(--cbx-ink);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--cbx-line);
+    border-radius: 999px;
+    box-shadow: var(--shadow-card);
+}
+.timer-component h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--cbx-slate);
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.75rem;
+}
+.timer-component span {
+    font-size: 1.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--cbx-sky-700);
 }
 
-/* Question Card Style */
+/* Last minute */
+.timer-component.timer-warning {
+    background: var(--cbx-rose-50);
+    border-color: rgba(208, 69, 95, 0.4);
+    animation: pulseWarn 1.6s ease-in-out infinite;
+}
+.timer-component.timer-warning span { color: var(--cbx-rose-700); }
+
+@keyframes pulseWarn {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(208, 69, 95, 0.32); }
+    50%      { box-shadow: 0 0 0 10px rgba(208, 69, 95, 0); }
+}
+
+/* ---- Question navigator ---- */
+.all-questions-container {
+    padding: 18px;
+    width: 100%;
+    max-height: 24rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: center;
+    gap: 10px;
+    background: var(--cbx-white);
+    border: 1px solid var(--cbx-line-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+}
+
 .question-card {
-    width: 50px;
-    height: 50px;
-    border-radius: 8px;
-    border: 1px solid #e0e0e0;
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cbx-line);
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f5f5f5;
+    background-color: var(--cbx-white);
     font-weight: 500;
-    color: #333;
+    color: var(--cbx-ink);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease;
 }
+.question-card:hover { border-color: var(--cbx-sky-500); background-color: var(--cbx-sky-50); }
 
-.question-card:hover {
-    background-color: #e3f2fd;
+/* Answered: filled. Current: ringed. Both can apply together. */
+.question-card.answered {
+    background-color: var(--cbx-sky-600);
+    border-color: var(--cbx-sky-600);
+    color: #fff;
 }
-
-/* Active question - dim blue */
 .question-card.active {
-    background-color: #bbdefb; /* light/dim blue */
-    color: #0d6efd; /* primary text */
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    border-color: var(--cbx-sky-500);
+    background-color: var(--cbx-sky-50);
+    color: var(--cbx-ink);
+    box-shadow: 0 0 0 4px rgba(46, 155, 230, 0.22);
 }
+.question-card.active.answered { background-color: var(--cbx-sky-600); color: #fff; }
 
-.exam-qa{
-    min-height: 400px !important;
+/* ---- The question itself ---- */
+.exam-qa { min-height: 400px !important; }
+.exam-qa .lead { font-size: 1.28rem; font-weight: 400; line-height: 1.5; color: var(--cbx-ink); }
+
+/* Each option is a whole-row target, not just a tiny radio */
+.exam-qa .form-check {
+    position: relative;
+    padding: 0;
+    margin-bottom: 0.65rem;
+    border: 1px solid var(--cbx-line);
+    border-radius: var(--radius-md);
+    background: var(--cbx-white);
+    transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
 }
-
-.question-card.answered {
-  background-color: #0d6efd;
-  color: white;
+.exam-qa .form-check:hover { border-color: var(--cbx-sky-400); background: var(--cbx-sky-50); }
+.exam-qa .form-check .form-check-input {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    margin: 0;
+    transform: translateY(-50%);
 }
-.question-card.answered {
-  background-color: #0d6efd;
-  color: white;
+.exam-qa .form-check .form-check-label {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 1rem 0.9rem 2.8rem;
+    cursor: pointer;
 }
-
-
+.exam-qa .form-check:has(.form-check-input:checked) {
+    border-color: var(--cbx-sky-500);
+    background: var(--cbx-sky-50);
+    box-shadow: 0 0 0 3px rgba(46, 155, 230, 0.16);
+}
+.exam-qa .form-check:has(.form-check-input:focus-visible) { outline: 2px solid var(--cbx-sky-500); outline-offset: 2px; }

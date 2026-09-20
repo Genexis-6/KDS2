@@ -1,7 +1,5 @@
 import { create } from "zustand";
-import { DefaultRequestSetUp } from "../http/default_request_set_up";
-import type { loginResInterface } from "../../features/auth/view/component/handle_form_submission";
-import { AllServerUrls } from "../http/all_server_url";
+import { AuthInterceptors } from "../http/auth_interceptors";
 
 
 
@@ -14,27 +12,21 @@ type useAuthTokenParam = {
 
 
 export const useAuthTokenStore = create<useAuthTokenParam>(
-    (set) => ({
+    (set, get) => ({
         token: null,
         setToken: (newToken) => {
             set({ token: newToken })
         },
+        // Asks the server for a fresh access token using the refresh cookie.
+        // Uses the same single-flight refresh as the 401 interceptor, and if the
+        // refresh token is rejected it triggers the same "session ended" handling.
+        // Never throws: on failure the token is simply left unchanged.
         getAcessToken: async () => {
-            var newToken = await getNewToken()
-            set({ token: newToken });
+            const result = await AuthInterceptors.refreshAccessToken(get().token)
+            if (result.ok) set({ token: result.accessToken })
         },
         clearToken: () => {
             set({ token: null })
         }
     })
 )
-
-
-
-
-
-async function getNewToken() {
-    var res = await DefaultRequestSetUp.get<loginResInterface>({ url: AllServerUrls.getRefreshToken })
-    // console.log(res.data.accessToken);
-    return res.data.accessToken;
-}

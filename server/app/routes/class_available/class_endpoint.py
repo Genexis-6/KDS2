@@ -4,10 +4,11 @@ from fastapi.responses import JSONResponse
 from app.repo.schemas.default_server_res import DefaultServerApiRes
 from app.repo import db_injection
 from app.repo.queries.class_room_queries.class_queries import ClassQueries
-from app.repo.schemas.class_schemas.add_new_class_schemas import AddNewClassSchemas
+from app.repo.schemas.class_schemas.add_new_class_schemas import AddNewClassSchemas, UpdateClassSchemas
 from app.utils.enums.class_room_enums import ClassRoomEnums
 from typing import Annotated, List
 from app.repo.schemas.class_schemas.class_schemas import ClassFullDetails, ClassSchemas
+from app.repo.schemas.student_schemas.add_new_student_schemas import PaginatedStudents
 from app.security.token_generator import verify_token
 
 
@@ -50,6 +51,21 @@ async def add_new_class(db: db_injection, add:AddNewClassSchemas, current_user:A
     )
     
     
+@room.put("/update_class", response_model=DefaultServerApiRes)
+async def update_class(db: db_injection, update: UpdateClassSchemas, current_user:Annotated[dict, Depends(verify_token)] ):
+    class_ = ClassQueries(db)
+    result = await class_.update_class(update)
+    if result == ClassRoomEnums.NOT_FOUND:
+        return JSONResponse(
+            content={"message":"no class with this id existed"},
+            status_code=404
+        )
+    return DefaultServerApiRes(
+        statusCode=200,
+        message="class updated successfully"
+    )
+
+
 @room.delete("/delete_class", response_model=DefaultServerApiRes)
 async def delete_class(db: db_injection, className: Annotated[str, Query(..., description="class id")], current_user:Annotated[dict, Depends(verify_token)] ):
     class_ =  ClassQueries(db)
@@ -79,4 +95,24 @@ async def get_class_full_info(db:db_injection, className: Annotated[str, Query(.
         statusCode=200,
         message="class full infomation",
         data=full_info
+    )
+
+
+@room.get("/get_class_students", response_model=DefaultServerApiRes[PaginatedStudents])
+async def get_class_students(
+    db: db_injection,
+    current_user: Annotated[dict, Depends(verify_token)],
+    classId: Annotated[UUID, Query(..., description="class id")],
+    page: Annotated[int, Query(ge=1)] = 1,
+    pageSize: Annotated[int, Query(ge=1, le=100)] = 20,
+    search: Annotated[str | None, Query()] = None,
+):
+    class_ = ClassQueries(db)
+    result = await class_.get_class_students_paginated(
+        class_id=classId, page=page, page_size=pageSize, search=search
+    )
+    return DefaultServerApiRes(
+        statusCode=200,
+        message="class students",
+        data=result
     )

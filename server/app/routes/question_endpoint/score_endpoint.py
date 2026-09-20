@@ -27,6 +27,9 @@ async def submit_exam_result(
             detail="Score already exists for this student and subject."
         )
 
+    # Submitting (manual click or auto-submit when the timer runs out) records the
+    # score only. The student stays logged in and goes back to their dashboard;
+    # their session ends on logout, on natural expiry, or when an admin clears it.
     return DefaultServerApiRes(
         statusCode=200,
         message="Exam graded successfully.",

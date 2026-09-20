@@ -15,7 +15,6 @@ export default function ExamScreen() {
         allAvaliableQuestions: questions,
         currentQuestionIndex,
         nextQuestion,
-        isTimerRunning,
         prevQuestion,
         selectedExam,
         proceedExam,
@@ -35,15 +34,12 @@ export default function ExamScreen() {
         checkExam();
     }, []);
 
-    useEffect(
-        () => {
-            setTimeout(() => {
-                if (isTimerRunning === false) {
-                    navigate(AppUrl.examSelectionUrl)
-                }
-            }, 3000);
-        }, [isTimerRunning]
-    )
+    // NOTE: auto-submit-on-timeout is handled by TimerCard's startTimer(onTimeUp)
+    // callback, which calls AllExamOperations.submitExam() and navigates away.
+    // A previous version of this effect force-navigated the student out of the
+    // exam ~3 seconds after this screen mounted, regardless of the timer's
+    // actual state (its setTimeout closure always captured isTimerRunning as
+    // `false`), which silently kicked every student out of every exam. Removed.
 
     if (!questions || questions.length === 0) {
         return <div className="text-center mt-5">No questions available.</div>;
@@ -93,7 +89,7 @@ export default function ExamScreen() {
                 </div>
                 <div className="col-md-8">
                     <div className="exam-qa card shadow-sm p-4 w-100 mb-3">
-                        <h5 className="mb-3 text-uppercase">
+                        <h5 className="mb-3 text-muted">
                             Question {currentQuestionIndex + 1} of {questions.length}
                         </h5>
                         <p className="lead">{currentQuestion.question}</p>
